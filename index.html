@@ -3,11 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>听记批改魔方 - GitHub云端网页版</title>
+    <title>听记批改魔方 - GitHub云端网页完全体</title>
     <style>
         :root {
             --primary-gradient: linear-gradient(135deg, #a1c4fd 0%, #c2e9fb 100%);
             --rainbow-active: linear-gradient(120deg, #ff9a9e 0%, #fecfef 99%, #fecfef 100%);
+            --ai-gradient: linear-gradient(135deg, #f6d365 0%, #fda085 100%);
             --accent-color: #4a90e2;
             --text-dark: #2c3e50;
             --bg-light: #f8f9fa;
@@ -40,17 +41,22 @@
         .action-btn:hover { opacity: 0.9; transform: translateY(-2px); }
         .action-btn:disabled { background: #cbd5e1; cursor: not-allowed; box-shadow: none; }
         
-        .clear-btn {
-            background: linear-gradient(135deg, #fdfbfb 0%, #ebedee 100%);
-            color: #475569;
-            border: 1.5px solid #cbd5e1;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02);
+        .clear-btn { background: linear-gradient(135deg, #fdfbfb 0%, #ebedee 100%); color: #475569; border: 1.5px solid #cbd5e1; }
+        .clear-btn:hover { background: var(--rainbow-active); color: #334155; border-color: transparent; box-shadow: 0 4px 12px rgba(254, 207, 239, 0.5); }
+        
+        /* 智能挑点按钮的炫酷渐变 */
+        .ai-pick-btn {
+            background: linear-gradient(135deg, #f1f2b5 0%, #157145 100%);
+            background: var(--ai-gradient);
+            color: #fff;
+            border: none;
+            font-weight: 600;
+            box-shadow: 0 4px 12px rgba(253, 160, 133, 0.3);
         }
-        .clear-btn:hover {
-            background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);
-            color: #334155;
-            border-color: transparent;
-            box-shadow: 0 4px 12px rgba(254, 207, 239, 0.5);
+        .ai-pick-btn:hover {
+            opacity: 0.95;
+            transform: scale(1.02);
+            box-shadow: 0 6px 15px rgba(253, 160, 133, 0.5);
         }
     </style>
 </head>
@@ -89,7 +95,10 @@
         </div>
 
         <div class="input-group">
-            <div class="section-title">📖 完整课文原文区 (点击单字选词 | 鼠标划选短语或长句)</div>
+            <div class="section-title" style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
+                <span>📖 完整课文原文区 (点字或划选)</span>
+                <button class="cube-btn ai-pick-btn" onclick="triggerAiSmartPick()">🎲 AI 智能挑点拓展（免点选）</button>
+            </div>
             <div class="text-reader-box" id="textReader" onmouseup="handleTextSelection()">
                 正在加载云端资产库，请稍候...
             </div>
@@ -104,12 +113,12 @@
                 </div>
                 <div>
                     <div style="font-size: 12px; color: #64748b; margin-bottom: 4px;">选中的核心考点内容</div>
-                    <input type="text" id="targetCheckpoint" class="input-name" style="padding: 7px 10px;" placeholder="点击或划选后自动提取">
+                    <input type="text" id="targetCheckpoint" class="input-name" style="padding: 7px 10px;" placeholder="点击、划选或点击上方AI智能挑点">
                 </div>
             </div>
             <div>
                 <div style="font-size: 12px; color: #64748b; margin-bottom: 4px;">整体情况描述补充 (卷面特征/粗心点)</div>
-                <input type="text" id="teacherRemark" class="input-name" style="padding: 7px 10px;" placeholder="如: 字迹端正清秀 / 全篇还原度极高，仅在长难词上有小瑕疵">
+                <input type="text" id="teacherRemark" class="input-name" style="padding: 7px 10px;" placeholder="如: 字迹端正清秀 / 全篇还原度极高，可以做语法拓展">
             </div>
         </div>
 
@@ -140,6 +149,7 @@
     let currentBook = "NG_Intro";
     let selectedUnits = [];
     let detectedType = "未识别";
+    let isAiAutoPickMode = false; // 是否开启了AI盲盒挑点拓展模式
 
     async function loadTextbookData() {
         try {
@@ -217,7 +227,16 @@
         reader.innerHTML = htmlContent;
     }
 
+    // 🎉 新增逻辑：一键触发 AI 智能挑点拓展
+    function triggerAiSmartPick() {
+        if (selectedUnits.length === 0) { alert("请先在上方勾选要打卡的单元篇章！"); return; }
+        isAiAutoPickMode = true;
+        document.getElementById("targetCheckpoint").value = "AI将自动锁定本课高阶重难点";
+        updateTypeDisplay("高阶语法拓展");
+    }
+
     function analyzeCheckpointType(text) {
+        if (isAiAutoPickMode) return "高阶语法拓展";
         const cleanText = text.trim();
         if (!cleanText) return "未识别";
         const wordsArray = cleanText.split(/\s+/).filter(w => w.length > 0);
@@ -240,6 +259,7 @@
     }
 
     function clearDetection() {
+        isAiAutoPickMode = false;
         document.getElementById("targetCheckpoint").value = "";
         updateTypeDisplay("未识别");
     }
@@ -247,18 +267,18 @@
     function clearFormExceptLessons() {
         document.getElementById("studentName").value = "";
         document.getElementById("needSelfCorrectionReminder").checked = false;
-        document.getElementById("targetCheckpoint").value = "";
         document.getElementById("teacherRemark").value = "";
-        updateTypeDisplay("未识别");
         document.getElementById("v_star").value = "5";
         document.getElementById("g_star").value = "5";
         document.getElementById("s_star").value = "5";
         document.getElementById("c_star").value = "5";
         document.getElementById("outputTextarea").value = "";
+        clearDetection();
     }
 
     function handleWordClick(element, event) {
         if (window.getSelection().toString().trim().length > 0) return;
+        isAiAutoPickMode = false; // 只要老师手动点了，就关闭自动模式
         const word = element.getAttribute("data-word");
         if (word) {
             document.getElementById("targetCheckpoint").value = word;
@@ -269,6 +289,7 @@
     function handleTextSelection() {
         const selection = window.getSelection().toString().trim();
         if (selection.length > 0) {
+            isAiAutoPickMode = false; // 关闭自动模式
             document.getElementById("targetCheckpoint").value = selection;
             updateTypeDisplay(analyzeCheckpointType(selection));
         }
@@ -309,7 +330,7 @@
         });
         const bookChaptersContext = chapterTitles.join("和");
 
-        if (!checkpoint || detectedType === "未识别") { alert("请先选择您想要批改讲解的课文词句！"); return; }
+        if (!checkpoint || detectedType === "未识别") { alert("请先选择您想要批改讲解的课文词句，或点击智能挑点！"); return; }
 
         const generateBtn = document.getElementById("generateBtn");
         const outputArea = document.getElementById("outputTextarea");
@@ -320,7 +341,19 @@
 
         const systemPrompt = `你是一位精通国家地理少儿英语教材的顶级教研名师。请严格遵循以下输出模板，禁止输出任何多余的废话、前言、后记、或者是“好的为您生成内容”。整体字数必须严格卡在 350 字左右。四个维度的五角星直接按给出的符号直接原样呈现，不添加额外文字。`;
         
-        // 🚀 重骨级 User Prompt：注入高情商场景夸夸逻辑
+        // 🚀 特工级分流指令：判断是否是AI智能挑点模式
+        let aiRulePrompt = "";
+        if (isAiAutoPickMode) {
+            aiRulePrompt = `【🚨 核心警告：当前处于老师免点选的 AI 智能挑点拓展模式】
+因为核心卡点传入的是占位符，此时你必须充当教研官：
+1. 翻阅 [课文背景文本库参考]，在文中主动挖掘出一个最具代表性的【语法】重难点或高阶长难句（例如定语从句、非谓语动词形式、条件状语等），将其作为核心考点词句。
+2. 此时，评语中的【[考点类型]】固定生成为：【语法拓展】；【[核心卡点]】则生成为你挑出的那个英文词组或句子结构。
+3. 整体情况描述段落中，夸奖句式变为：‘老师在文章末尾特别为你锁定了一个高阶语法用法。虽然这个结构较为隐蔽，但它作为全句的“逻辑延伸”，起到了特别关键的作用，我们来深度复盘拓展一下：’`;
+        } else {
+            aiRulePrompt = `【常规模式】
+请严格针对老师选出的核心卡点：${checkpoint} 及其对应的自动识别考点标签：【${detectedType}】 进行批改解构。`;
+        }
+
         const userPrompt = `请根据以下数据行变量生成一份高质量、充满人文亲和力与画面细节感的听记打卡反馈报告：
 - 学生姓名：${name}
 - 课时册别：${bookFormatted} ${unitsStr}
@@ -329,18 +362,17 @@
 语法 ${gStar}
 书写 ${sStar}
 完整 ${cStar}
-- 自动提取的考点分类标签：【${detectedType}】
-- 核心卡点：${checkpoint}
 - 老师备注的补充描述（如字迹、卷面特征）：${remark}
 - 当前打卡课文文章标题名：${bookChaptersContext}
 - 课文背景文本库参考：${relatedContext}
+${aiRulePrompt}
 
 【⭐ 核心要求：整体情况描述段落的升级逻辑】
 在这个部分，请模仿以下高质感名师风范进行融合编写：
 1. 结合 [当前打卡课文文章标题名] 简述文章背景或核心主题逻辑（例如：如果是《THE LOST CITY OF ATLANTIS》，可说展现了极强的耐心，准确捕捉到了亚特兰蒂斯如何由于贪婪而沉入海底的核心逻辑；如果是大胃王，可说明晰地记录了速度大胃王竞赛的精彩画面）。
 2. 评价书写与还原度：结合 [老师备注的补充描述]（如果输入了内容则深度内化展开；如果该项为空，请自动智能夸奖其字迹端正、字距得体、落笔清晰，展现了极强的专注力与全篇长篇还原能力）。
 3. 融入自改状态：${selfCorrectionPrompt}
-4. 顺畅引出下一处的卡点解析（例如：‘在词汇拼写方面整体准确率很高，仅在细节和本课核心高频考点上，我们通过一处深度复盘彻底锁定它：’）。
+4. 顺畅引出下一处的卡点/拓展解析。
 
 【生成格式规范模板如下，请严格换词填空，禁止多字少字】：
 您好，以下是[学生姓名] [课时册别] 的听记打卡反馈，请查收~
@@ -349,18 +381,18 @@
 书写 [对应星星符号]
 完整 [对应星星符号]
 
-[学生姓名][请严格执行上方“整体情况描述段落升级逻辑”生成的一整段极具人文质感、画面细节与课文主题呼应的3句精美夸夸与铺垫]。我们主要需要再来练习单词拼写哦~写句子的时候记得标点也要清晰，这样句子才能意思清晰。一些单词结合词性、用法来记，下面具体来看一处：
+[学生姓名][请严格执行上方“整体情况描述段落升级逻辑”生成的一整段极具人文质感、画面细节与课文主题呼应的3句精美夸夸与铺垫]。一些单词结合词性、用法来记，下面具体来看一处：
 
-【${detectedType}】【[核心卡点]】在“[此处自动在课文文本库中检索出包含核心卡点的完整英文原句]（[翻译成地道地地道道、富有韵味的中文原意]）”句中，
+【[实际判定的考点类型]】【[最终确定的核心卡点]】在“[包含核心卡点的完整英文原句]（[翻译成地道、优雅的中文原意]）”句中，
 
-[针对该卡点进行2句话精炼、一针见血、绝不啰嗦的底层逻辑与避坑讲解。如果识别出的考点类型是词汇，则必须要点出其音节拆解如【da-maged】及词性用法；如果判定出是短语或语法，则重点剖析结构和搭配意义]。
+[针对该卡点进行2句话精炼、一针见血、不啰嗦的底层逻辑与避坑/高阶拓展讲解。如果考点类型是词汇，则必须要点出其音节拆解及词性用法；如果是短语或语法拓展，则重点剖析结构和高级搭配意义]。
 
 例句：【[针对该卡点专门拟定一个适合该级别的高分学术地道、结构契合的例句]】
 
-[一句话指出该卡点学生最容易错写或错用成什么形式，并叮嘱都掌握好用法~]
+[一句话指出该卡点学生最容易犯错的地方，或者如果是满分学霸，则叮嘱多在以后的写作中尝试运用好该高级用法~]
 
 【小练习巩固】
-[出 1 道极简的、针对该卡点的首字母填空或选择填空练习题，并在下一行新行括号内附带答案]
+[出 1 道极简的、针对该卡点的首字母填空、词形转换或选择填空练习题，并在下一行新行括号内附带答案]
 掌握好用法，期待你明天的进步呀！`;
 
         try {
@@ -400,7 +432,7 @@
         const textarea = document.getElementById("outputTextarea");
         textarea.select();
         document.execCommand("copy");
-        alert("🎉 精简反馈提分报告已成功复制！");
+        alert("🎉 完美的听记反馈报告已复制成功！快去群里交接吧！");
     }
 
     loadApiKey();
