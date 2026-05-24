@@ -351,7 +351,8 @@ ${selfCorrectionPrompt}
 掌握好用法，期待你明天的进步呀！`;
 
         try {
-            const response = await fetch("https://api.deepseek.com/v1/chat/completions", {
+            // ✨ 终极核心修复：改用了官方最新稳定的绝对通路地址
+            const response = await fetch("https://api.deepseek.com/chat/completions", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -360,8 +361,8 @@ ${selfCorrectionPrompt}
                 body: JSON.stringify({
                     model: "deepseek-chat",
                     messages: [
-                        { role: "system", content: systemPrompt }, // ✨ 修复：已补齐 content 键名
-                        { role: "user", content: userPrompt }     // ✨ 修复：已补齐 content 键名
+                        { role: "system", content: systemPrompt },
+                        { role: "user", content: userPrompt }
                     ],
                     temperature: 0.3
                 })
@@ -370,11 +371,13 @@ ${selfCorrectionPrompt}
             const data = await response.json();
             if (data.choices && data.choices[0]) {
                 outputArea.value = data.choices[0].message.content.trim();
+            } else if (data.error) {
+                outputArea.value = `DeepSeek 服务器返回错误: ${data.error.message}\n请检查您的账户余额或API额度。`;
             } else {
-                outputArea.value = "生成失败，请检查 API Key 是否有效，或检查网络连接状态。";
+                outputArea.value = "生成失败，收到了异常的响应响应。";
             }
         } catch (error) {
-            outputArea.value = `接口调用发生异常: ${error.message}`;
+            outputArea.value = `接口调用发生阻断异常: ${error.message}\n提示：请确保在 GitHub 上是以 https 开头的安全网址在线运行。`;
         } finally {
             generateBtn.disabled = false;
             generateBtn.innerText = "🤖 呼叫 DeepSeek 自动智审";
