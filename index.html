@@ -40,7 +40,6 @@
         .action-btn:hover { opacity: 0.9; transform: translateY(-2px); }
         .action-btn:disabled { background: #cbd5e1; cursor: not-allowed; box-shadow: none; }
         
-        /* 清空按钮的专属彩虹样式 */
         .clear-btn {
             background: linear-gradient(135deg, #fdfbfb 0%, #ebedee 100%);
             color: #475569;
@@ -142,7 +141,6 @@
     let selectedUnits = [];
     let detectedType = "未识别";
 
-    // 线上动态加载同一目录下的课文数据库资产
     async function loadTextbookData() {
         try {
             const response = await fetch('textbook.json');
@@ -169,7 +167,7 @@
             const btn = document.createElement("button");
             btn.className = "cube-btn";
             btn.innerText = unit;
-            if (selectedUnits.includes(unit)) btn.classList.add("active"); // 清空时保持高亮状态
+            if (selectedUnits.includes(unit)) btn.classList.add("active");
             btn.onclick = () => toggleUnit(unit, btn);
             grid.appendChild(btn);
         });
@@ -184,7 +182,7 @@
         buttons[0].classList.toggle("active", bookKey === "NG_Intro");
         buttons[1].classList.toggle("active", bookKey === "NG_1A");
         buttons[2].classList.toggle("active", bookKey === "NG_1B");
-        selectedUnits = []; // 切大册子时清空课时选择
+        selectedUnits = [];
         renderUnitButtons();
         clearDetection();
     }
@@ -246,28 +244,17 @@
         updateTypeDisplay("未识别");
     }
 
-    // 🧹 一键清空核心逻辑：只清空除“册别”和“文章单元”之外的一切变量
     function clearFormExceptLessons() {
-        // 1. 清空姓名与自改勾选
         document.getElementById("studentName").value = "";
         document.getElementById("needSelfCorrectionReminder").checked = false;
-        
-        // 2. 清空自动提取卡点和描述备注
         document.getElementById("targetCheckpoint").value = "";
         document.getElementById("teacherRemark").value = "";
         updateTypeDisplay("未识别");
-        
-        // 3. 将星星系统恢复至满分 5 星初始状态
         document.getElementById("v_star").value = "5";
         document.getElementById("g_star").value = "5";
         document.getElementById("s_star").value = "5";
         document.getElementById("c_star").value = "5";
-        
-        // 4. 清空右侧大模型输出文本框
         document.getElementById("outputTextarea").value = "";
-        
-        // 提示释放压力
-        console.log("魔方表单已重置，当前课时已保留锁定。");
     }
 
     function handleWordClick(element, event) {
@@ -373,8 +360,8 @@ ${selfCorrectionPrompt}
                 body: JSON.stringify({
                     model: "deepseek-chat",
                     messages: [
-                        { role: "system", systemPrompt },
-                        { role: "user", userPrompt }
+                        { role: "system", content: systemPrompt }, // ✨ 修复：已补齐 content 键名
+                        { role: "user", content: userPrompt }     // ✨ 修复：已补齐 content 键名
                     ],
                     temperature: 0.3
                 })
@@ -384,7 +371,7 @@ ${selfCorrectionPrompt}
             if (data.choices && data.choices[0]) {
                 outputArea.value = data.choices[0].message.content.trim();
             } else {
-                outputArea.value = "生成失败，请检查 API Key 或网络连接状态。";
+                outputArea.value = "生成失败，请检查 API Key 是否有效，或检查网络连接状态。";
             }
         } catch (error) {
             outputArea.value = `接口调用发生异常: ${error.message}`;
