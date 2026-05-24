@@ -199,6 +199,7 @@
         reader.innerHTML = htmlContent;
     }
 
+    // 核心硬核：全自动字数判定考点标签算法
     function analyzeCheckpointType(text) {
         const cleanText = text.trim();
         if (!cleanText) return "未识别";
@@ -207,10 +208,11 @@
 
         if (wordCount === 1) {
             const singleWord = wordsArray[0].toLowerCase();
+            // 如果单个词带ing或ed，更聪明地引导给语法
             if (singleWord.length > 5 && (singleWord.endsWith("ing") || singleWord.endsWith("ed"))) return "语法";
             return "词汇";
         } else if (wordCount >= 2 && wordCount <= 3) {
-            return "短语";
+            return "短语"; // 或根据偏好输出为 固定搭配
         } else {
             return "语法";
         }
@@ -280,7 +282,7 @@
         
         generateBtn.disabled = true;
         generateBtn.innerText = "⚡ DeepSeek 正在极速复盘中...";
-        outputArea.value = "正在连接 DeepSeek 智审网络，请稍候...";
+        outputArea.value = "正在连接 DeepSeek 智审网络，请稍候...（若长时间无响应请检查API Key余额或网络）";
 
         const systemPrompt = `你是一位精通国家地理少儿英语教材的顶级教研名师。请严格遵循以下输出模板，禁止输出任何多余的废话、前言、后记、或者是“好的为您生成内容”。整体字数必须严格卡在 350 字左右。四个维度的五角星直接按给出的符号直接原样呈现，不添加额外文字。`;
         
@@ -354,7 +356,7 @@ ${selfCorrectionPrompt}
         const textarea = document.getElementById("outputTextarea");
         textarea.select();
         document.execCommand("copy");
-        alert("🎉 精简反馈提分报告已成功复制！可以直接回微信群发给家长啦！");
+        alert("🎉 反馈提分文案已成功复制！可以直接回微信群发送啦！");
     }
 
     loadApiKey();
