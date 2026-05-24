@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>听记批改魔方 - GitHub云端版</title>
+    <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #a1c4fd 0%, #c2e9fb 100%);
+            --rainbow-active: linear-gradient(120deg, #ff9a9e 0%, #fecfef 99%, #fecfef 100%);
+            --accent-color: #4a90e2;
+            --text-dark: #2c3e50;
+            --bg-light: #f8f9fa;
+            --card-shadow: 0 8px 30px rgba(0, 0, 0, 0.05);
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+        body { background-color: #f4f6f9; color: var(--text-dark); padding: 20px; display: flex; justify-content: center; align-items: flex-start; min-height: 100vh; }
+        .container { display: grid; grid-template-columns: 1.2fr 1fr; gap: 25px; width: 100%; max-width: 1450px; background: white; padding: 30px; border-radius: 20px; box-shadow: var(--card-shadow); }
+        @media (max-width: 1024px) { .container { grid-template-columns: 1fr; } }
+        .panel-left { display: flex; flex-direction: column; gap: 20px; border-right: 1px solid #eef2f5; padding-right: 25px; }
+        @media (max-width: 1024px) { .panel-left { border-right: none; padding-right: 0; } }
+        .section-title { font-size: 15px; font-weight: 600; margin-bottom: 10px; color: #34495e; display: flex; align-items: center; gap: 8px; }
+        .input-group { background: var(--bg-light); padding: 16px; border-radius: 12px; }
+        .input-name { width: 100%; padding: 10px 12px; border: 1.5px solid #dcdfe6; border-radius: 8px; font-size: 14px; outline: none; transition: all 0.3s; }
+        .input-name:focus { border-color: var(--accent-color); background: white; }
+        .btn-grid { display: flex; gap: 10px; flex-wrap: wrap; }
+        .cube-btn { padding: 9px 15px; border: 1.5px solid #dcdfe6; background: white; border-radius: 8px; cursor: pointer; font-weight: 500; font-size: 13px; transition: all 0.25s ease; }
+        .cube-btn:hover { border-color: var(--accent-color); color: var(--accent-color); }
+        .cube-btn.active { background: var(--rainbow-active); border-color: transparent; color: #4a4a4a; box-shadow: 0 4px 12px rgba(254, 207, 239, 0.5); font-weight: 600; }
+        .text-reader-box { background: #fff; border: 1.5px solid #cbd5e1; padding: 14px; border-radius: 8px; height: 260px; overflow-y: auto; font-size: 14.5px; line-height: 1.75; color: #334155; }
+        .clickable-word { cursor: pointer; border-radius: 3px; padding: 0 1px; }
+        .clickable-word:hover { background-color: #ffe0e6; color: #d63384; }
+        .checkbox-container { display: flex; align-items: center; gap: 8px; cursor: pointer; user-select: none; font-size: 13px; font-weight: 500; color: #475569; background: #fff; padding: 6px 10px; border-radius: 6px; border: 1px solid #e2e8f0; }
+        .star-matrix { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+        .star-row { display: flex; align-items: center; justify-content: space-between; background: var(--bg-light); padding: 10px 14px; border-radius: 8px; }
+        .star-select { padding: 5px 8px; border: 1px solid #dcdfe6; border-radius: 6px; background: white; outline: none; cursor: pointer; font-size: 13px; }
+        .panel-right { display: flex; flex-direction: column; gap: 15px; position: sticky; top: 20px; }
+        .output-area { width: 100%; height: 500px; padding: 20px; border: 1.5px solid #e2e8f0; border-radius: 12px; background: #fafafa; font-size: 14px; line-height: 1.6; resize: none; outline: none; color: #334155; }
+        .action-btn { width: 100%; padding: 14px; background: linear-gradient(135deg, #2193b0 0%, #6dd5ed 100%); color: white; border: none; border-radius: 10px; font-size: 15px; font-weight: 600; cursor: pointer; box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3); transition: transform 0.2s; }
+        .action-btn:hover { opacity: 0.9; transform: translateY(-2px); }
+        .action-btn:disabled { background: #cbd5e1; cursor: not-allowed; box-shadow: none; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="panel-left">
+        <h2 style="font-size: 20px; font-weight: 700; color: #1a2a3a;">🎨 听记批改魔方 线上工作台</h2>
+        
+        <div class="input-group">
+            <div class="section-title">👤 学生基本状态</div>
+            <div style="display: flex; gap: 15px; align-items: center;">
+                <input type="text" id="studentName" class="input-name" style="flex: 1;" placeholder="学生姓名 (如: Alice)">
+                <label class="checkbox-container">
+                    <input type="checkbox" id="needSelfCorrectionReminder">
+                    ❌ 未进行自我批改（勾选提醒）
+                </label>
+            </div>
+        </div>
+
+        <div class="input-group">
+            <div class="section-title">📚 册别选择</div>
+            <div class="btn-grid" id="bookGrid">
+                <button class="cube-btn active" onclick="selectBook('NG_Intro')">NG Intro</button>
+                <button class="cube-btn" onclick="selectBook('NG_1A')">NG 1A (U1-6)</button>
+                <button class="cube-btn" onclick="selectBook('NG_1B')">NG 1B (U7-12)</button>
+            </div>
+        </div>
+
+        <div class="input-group">
+            <div class="section-title">🧩 篇章选择 (支持单篇或多选合并)</div>
+            <div class="btn-grid" id="unitGrid"></div>
+        </div>
+
+        <div class="input-group">
+            <div class="section-title">📖 完整课文原文区 (点击单字选词 | 鼠标划选短语或长句)</div>
+            <div class="text-reader-box" id="textReader" onmouseup="handleTextSelection()">
+                正在加载云端资产库，请稍候...
+            </div>
+        </div>
+
+        <div class="input-group">
+            <div class="section-title">⚙️ 自动识别与备注</div>
+            <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 12px; margin-bottom: 10px;">
+                <div>
+                    <div style="font-size: 12px; color: #64748b; margin-bottom: 4px;">智能识别考点</div>
+                    <input type="text" id="detectedTypeDisplay" class="input-name" style="padding: 7px 10px; background: #e2e8f0; font-weight: 600;" readonly value="未识别">
+                </div>
+                <div>
+                    <div style="font-size: 12px; color: #64748b; margin-bottom: 4px;">选中的核心考点内容</div>
+                    <input type="text" id="targetCheckpoint" class="input-name" style="padding: 7px 10px;" placeholder="点击或划选后自动提取">
+                </div>
+            </div>
+            <div>
+                <div style="font-size: 12px; color: #64748b; margin-bottom: 4px;">整体情况描述补充</div>
+                <input type="text" id="teacherRemark" class="input-name" style="padding: 7px 10px;" placeholder="如: 补充练习，值得表扬！主要需要再来练习单词拼写">
+            </div>
+        </div>
+
+        <div class="input-group">
+            <div class="section-title">⭐ 四维星星评定系统</div>
+            <div class="star-matrix">
+                <div class="star-row"><span class="star-label">词汇</span><select id="v_star" class="star-select"><option>5</option><option>4.5</option><option>4</option><option>3.5</option><option>3</option></select></div>
+                <div class="star-row"><span class="star-label">语法</span><select id="g_star" class="star-select"><option>5</option><option>4.5</option><option>4</option><option>3.5</option><option>3</option></select></div>
+                <div class="star-row"><span class="star-label">书写</span><select id="s_star" class="star-select"><option>5</option><option>4.5</option><option>4</option><option>3.5</option><option>3</option></select></div>
+                <div class="star-row"><span class="star-label">完整</span><select id="c_star" class="star-select"><option>5</option><option>4.5</option><option>4</option><option>3.5</option><option>3</option></select></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="panel-right">
+        <div class="input-group" style="padding: 12px;">
+            <div class="section-title" style="margin-bottom: 6px;">🔑 DeepSeek API Key 配置</div>
+            <input type="password" id="apiKeyInput" class="input-name" placeholder="请输入您的 DeepSeek API Key" onchange="saveApiKey()">
+        </div>
+        <button class="action-btn" id="generateBtn" onclick="requestDeepSeekFeedback()" style="background: linear-gradient(135deg, #2193b0 0%, #6dd5ed 100%);">🤖 呼叫 DeepSeek 自动智审</button>
+        <textarea id="outputTextarea" class="output-area" readonly placeholder="等待智审文案吐出..."></textarea>
+        <button class="action-btn" onclick="copyToClipboard()">📋 一键复制反馈文案</button>
+    </div>
+</div>
+
+<script>
+    let textbookData = null;
+    let currentBook = "NG_Intro";
+    let selectedUnits = [];
+    let detectedType = "未识别";
+
+    // 线上动态加载同一目录下的课文数据库资产
+    async function loadTextbookData() {
+        try {
+            const response = await fetch('textbook.json');
+            textbookData = await response.json();
+            renderUnitButtons();
+        } catch (error) {
+            document.getElementById("textReader").innerText = "教材资产库加载失败，请确保 textbook.json 文件已正确上传至 GitHub 仓库同一目录下！";
+        }
+    }
+
+    function loadApiKey() {
+        const savedKey = localStorage.getItem("deepseek_api_key");
+        if (savedKey) document.getElementById("apiKeyInput").value = savedKey;
+    }
+    function saveApiKey() {
+        localStorage.setItem("deepseek_api_key", document.getElementById("apiKeyInput").value.trim());
+    }
+
+    function renderUnitButtons() {
+        if (!textbookData) return;
+        const grid = document.getElementById("unitGrid");
+        grid.innerHTML = "";
+        Object.keys(textbookData[currentBook]).forEach(unit => {
+            const btn = document.createElement("button");
+            btn.className = "cube-btn";
+            btn.innerText = unit;
+            btn.onclick = () => toggleUnit(unit, btn);
+            grid.appendChild(btn);
+        });
+        selectedUnits = [];
+        document.getElementById("textReader").innerText = "请选择篇章...";
+        clearDetection();
+    }
+
+    function selectBook(bookKey) {
+        currentBook = bookKey;
+        const buttons = document.getElementById("bookGrid").children;
+        buttons[0].classList.toggle("active", bookKey === "NG_Intro");
+        buttons[1].classList.toggle("active", bookKey === "NG_1A");
+        buttons[2].classList.toggle("active", bookKey === "NG_1B");
+        renderUnitButtons();
+    }
+
+    function toggleUnit(unit, btn) {
+        if (selectedUnits.includes(unit)) {
+            selectedUnits = selectedUnits.filter(u => u !== unit);
+            btn.classList.remove("active");
+        } else {
+            selectedUnits.push(unit);
+            btn.classList.add("active");
+        }
+        renderInteractiveText();
+    }
+
+    function renderInteractiveText() {
+        const reader = document.getElementById("textReader");
+        if (selectedUnits.length === 0) { reader.innerText = "请选择篇章..."; return; }
+        let htmlContent = "";
+        selectedUnits.forEach(u => {
+            htmlContent += `<div style="margin-bottom: 8px; color: #1e293b; border-bottom: 1px solid #cbd5e1; padding-bottom: 4px;"><strong>【${u} - ${textbookData[currentBook][u].title}】</strong></div>`;
+            const words = textbookData[currentBook][u].content.split(/(\s+)/);
+            words.forEach(token => {
+                if (/\s+/.test(token)) { htmlContent += token; } 
+                else {
+                    const cleanWord = token.replace(/[.,\/#!$%\^&\*;:{}=\-_`~()?"']/g, "");
+                    htmlContent += `<span class="clickable-word" data-word="${cleanWord}" onclick="handleWordClick(this, event)">${token}</span>`;
+                }
+            });
+            htmlContent += "<br><br>";
+        });
+        reader.innerHTML = htmlContent;
+    }
+
+    function analyzeCheckpointType(text) {
+        const cleanText = text.trim();
+        if (!cleanText) return "未识别";
+        const wordsArray = cleanText.split(/\s+/).filter(w => w.length > 0);
+        const wordCount = wordsArray.length;
+
+        if (wordCount === 1) {
+            const singleWord = wordsArray[0].toLowerCase();
+            if (singleWord.length > 5 && (singleWord.endsWith("ing") || singleWord.endsWith("ed"))) return "语法";
+            return "词汇";
+        } else if (wordCount >= 2 && wordCount <= 3) {
+            return "短语";
+        } else {
+            return "语法";
+        }
+    }
+
+    function updateTypeDisplay(type) {
+        detectedType = type;
+        document.getElementById("detectedTypeDisplay").value = type;
+    }
+
+    function clearDetection() {
+        document.getElementById("targetCheckpoint").value = "";
+        updateTypeDisplay("未识别");
+    }
+
+    function handleWordClick(element, event) {
+        if (window.getSelection().toString().trim().length > 0) return;
+        const word = element.getAttribute("data-word");
+        if (word) {
+            document.getElementById("targetCheckpoint").value = word;
+            updateTypeDisplay(analyzeCheckpointType(word));
+        }
+    }
+
+    function handleTextSelection() {
+        const selection = window.getSelection().toString().trim();
+        if (selection.length > 0) {
+            document.getElementById("targetCheckpoint").value = selection;
+            updateTypeDisplay(analyzeCheckpointType(selection));
+        }
+    }
+
+    function convertStars(numStr) {
+        const num = parseFloat(numStr);
+        let starString = "🌟 ".repeat(Math.floor(num));
+        if (num % 1 !== 0) starString += "✨ ";
+        let emptyCount = 5 - Math.ceil(num);
+        if (emptyCount > 0) starString += "▫️ ".repeat(emptyCount);
+        return starString.trim();
+    }
+
+    async function requestDeepSeekFeedback() {
+        const apiKey = document.getElementById("apiKeyInput").value.trim();
+        if (!apiKey) { alert("请先配置您的 DeepSeek API Key！"); return; }
+
+        const name = document.getElementById("studentName").value || "学生";
+        const bookFormatted = currentBook === "NG_Intro" ? "NG Intro" : (currentBook === "NG_1A" ? "NG1A" : "NG1B");
+        const unitsStr = selectedUnits.length > 0 ? selectedUnits.join("+") : "对应单元";
+        const checkpoint = document.getElementById("targetCheckpoint").value;
+        const remark = document.getElementById("teacherRemark").value || "补充练习，值得表扬！主要需要再来练习单词拼写";
+        
+        const vStar = convertStars(document.getElementById("v_star").value);
+        const gStar = convertStars(document.getElementById("g_star").value);
+        const sStar = convertStars(document.getElementById("s_star").value);
+        const cStar = convertStars(document.getElementById("c_star").value);
+
+        const isChecked = document.getElementById("needSelfCorrectionReminder").checked;
+        const selfCorrectionPrompt = isChecked ? "请务必在整体情况描述处追加一整句：这次我看你还没有进行自我批改，下次记得做完听记后先自己对照原句修正一下哦，这样在大脑中的印象会更深刻！" : "";
+
+        let relatedContext = "";
+        selectedUnits.forEach(u => { relatedContext += textbookData[currentBook][u].content + " "; });
+
+        if (!checkpoint || detectedType === "未识别") { alert("请先选择您想要批改讲解的课文词句！"); return; }
+
+        const generateBtn = document.getElementById("generateBtn");
+        const outputArea = document.getElementById("outputTextarea");
+        
+        generateBtn.disabled = true;
+        generateBtn.innerText = "⚡ DeepSeek 正在极速复盘中...";
+        outputArea.value = "正在连接 DeepSeek 智审网络，请稍候...";
+
+        const systemPrompt = `你是一位精通国家地理少儿英语教材的顶级教研名师。请严格遵循以下输出模板，禁止输出任何多余的废话、前言、后记、或者是“好的为您生成内容”。整体字数必须严格卡在 350 字左右。四个维度的五角星直接按给出的符号直接原样呈现，不添加额外文字。`;
+        
+        const userPrompt = `请根据以下数据行变量生成一份高质量的听记打卡反馈报告：
+- 学生姓名：${name}
+- 课时册别：${bookFormatted} ${unitsStr}
+- 星星符号：
+词汇 ${vStar}
+语法 ${gStar}
+书写 ${sStar}
+完整 ${cStar}
+- 自动提取的考点分类标签：【${detectedType}】
+- 核心卡点：${checkpoint}
+- 整体描述与错因备注：${remark}
+- 课文背景文本库参考：${relatedContext}
+${selfCorrectionPrompt}
+
+【生成格式规范模板如下，请严格换词填空，禁止多字少字】：
+您好，以下是[学生姓名] [课时册别] 的听记打卡反馈，请查收~
+词汇 [对应星星符号]
+语法 [对应星星符号]
+书写 [对应星星符号]
+完整 [对应星星符号]
+
+[学生姓名][整体描述与错因备注]！我们主要需要再来练习单词拼写哦~写句子的时候记得标点也要清晰，这样句子才能意思清晰。[如有勾选，在此处自然融入下次记得自改的提醒]。一些单词结合词性、用法来记，下面具体来看一处：
+
+【${detectedType}】【[核心卡点]】在“[此处自动在课文文本库中检索出包含核心卡点的完整英文原句]（[翻译成地道、优雅的中文原意]）”句中，
+
+[针对该卡点进行2句话精炼、一针见血、不啰嗦的底层逻辑与避坑讲解。如果识别出的考点类型是词汇，则必须要点出其音节拆解如【da-maged】及词性用法；如果判定出是短语或语法，则重点剖析结构和搭配意义]。
+
+例句：【[针对该卡点专门拟定一个适合该级别的高分学术地道、结构契合的例句]】
+
+[一句话指出该卡点学生最容易错写或错用成什么形式，并叮嘱都掌握好用法~]
+
+【小练习巩固】
+[出 1 道极简的、针对该卡点的首字母填空或选择填空练习题，并在下一行新行括号内附带答案]
+掌握好用法，期待你明天的进步呀！`;
+
+        try {
+            const response = await fetch("https://api.deepseek.com/v1/chat/completions", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${apiKey}`
+                },
+                body: JSON.stringify({
+                    model: "deepseek-chat",
+                    messages: [
+                        { role: "system", content: systemPrompt },
+                        { role: "user", content: userPrompt }
+                    ],
+                    temperature: 0.3
+                })
+            });
+
+            const data = await response.json();
+            if (data.choices && data.choices[0]) {
+                outputArea.value = data.choices[0].message.content.trim();
+            } else {
+                outputArea.value = "生成失败，请检查 API Key 或网络连接状态。";
+            }
+        } catch (error) {
+            outputArea.value = `接口调用发生异常: ${error.message}`;
+        } finally {
+            generateBtn.disabled = false;
+            generateBtn.innerText = "🤖 呼叫 DeepSeek 自动智审";
+        }
+    }
+
+    function copyToClipboard() {
+        const textarea = document.getElementById("outputTextarea");
+        textarea.select();
+        document.execCommand("copy");
+        alert("🎉 精简反馈提分报告已成功复制！可以直接回微信群发给家长啦！");
+    }
+
+    loadApiKey();
+    loadTextbookData();
+</script>
+
+</body>
+</html>
