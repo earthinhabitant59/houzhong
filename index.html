@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>听记批改魔方 - GitHub云端版</title>
+    <title>听记批改魔方 - GitHub云端网页版</title>
     <style>
         :root {
             --primary-gradient: linear-gradient(135deg, #a1c4fd 0%, #c2e9fb 100%);
@@ -35,17 +35,34 @@
         .star-row { display: flex; align-items: center; justify-content: space-between; background: var(--bg-light); padding: 10px 14px; border-radius: 8px; }
         .star-select { padding: 5px 8px; border: 1px solid #dcdfe6; border-radius: 6px; background: white; outline: none; cursor: pointer; font-size: 13px; }
         .panel-right { display: flex; flex-direction: column; gap: 15px; position: sticky; top: 20px; }
-        .output-area { width: 100%; height: 500px; padding: 20px; border: 1.5px solid #e2e8f0; border-radius: 12px; background: #fafafa; font-size: 14px; line-height: 1.6; resize: none; outline: none; color: #334155; }
+        .output-area { width: 100%; height: 440px; padding: 20px; border: 1.5px solid #e2e8f0; border-radius: 12px; background: #fafafa; font-size: 14px; line-height: 1.6; resize: none; outline: none; color: #334155; }
         .action-btn { width: 100%; padding: 14px; background: linear-gradient(135deg, #2193b0 0%, #6dd5ed 100%); color: white; border: none; border-radius: 10px; font-size: 15px; font-weight: 600; cursor: pointer; box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3); transition: transform 0.2s; }
         .action-btn:hover { opacity: 0.9; transform: translateY(-2px); }
         .action-btn:disabled { background: #cbd5e1; cursor: not-allowed; box-shadow: none; }
+        
+        /* 清空按钮的专属彩虹样式 */
+        .clear-btn {
+            background: linear-gradient(135deg, #fdfbfb 0%, #ebedee 100%);
+            color: #475569;
+            border: 1.5px solid #cbd5e1;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02);
+        }
+        .clear-btn:hover {
+            background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);
+            color: #334155;
+            border-color: transparent;
+            box-shadow: 0 4px 12px rgba(254, 207, 239, 0.5);
+        }
     </style>
 </head>
 <body>
 
 <div class="container">
     <div class="panel-left">
-        <h2 style="font-size: 20px; font-weight: 700; color: #1a2a3a;">🎨 听记批改魔方 线上工作台</h2>
+        <h2 style="font-size: 20px; font-weight: 700; color: #1a2a3a; display: flex; justify-content: space-between; align-items: center;">
+            <span>🎨 听记批改魔方 线上版</span>
+            <button class="cube-btn clear-btn" onclick="clearFormExceptLessons()">🧹 一键清空（保留课时）</button>
+        </h2>
         
         <div class="input-group">
             <div class="section-title">👤 学生基本状态</div>
@@ -152,12 +169,13 @@
             const btn = document.createElement("button");
             btn.className = "cube-btn";
             btn.innerText = unit;
+            if (selectedUnits.includes(unit)) btn.classList.add("active"); // 清空时保持高亮状态
             btn.onclick = () => toggleUnit(unit, btn);
             grid.appendChild(btn);
         });
-        selectedUnits = [];
-        document.getElementById("textReader").innerText = "请选择篇章...";
-        clearDetection();
+        if (selectedUnits.length === 0) {
+            document.getElementById("textReader").innerText = "请选择篇章...";
+        }
     }
 
     function selectBook(bookKey) {
@@ -166,7 +184,9 @@
         buttons[0].classList.toggle("active", bookKey === "NG_Intro");
         buttons[1].classList.toggle("active", bookKey === "NG_1A");
         buttons[2].classList.toggle("active", bookKey === "NG_1B");
+        selectedUnits = []; // 切大册子时清空课时选择
         renderUnitButtons();
+        clearDetection();
     }
 
     function toggleUnit(unit, btn) {
@@ -199,7 +219,6 @@
         reader.innerHTML = htmlContent;
     }
 
-    // 核心硬核：全自动字数判定考点标签算法
     function analyzeCheckpointType(text) {
         const cleanText = text.trim();
         if (!cleanText) return "未识别";
@@ -208,11 +227,10 @@
 
         if (wordCount === 1) {
             const singleWord = wordsArray[0].toLowerCase();
-            // 如果单个词带ing或ed，更聪明地引导给语法
             if (singleWord.length > 5 && (singleWord.endsWith("ing") || singleWord.endsWith("ed"))) return "语法";
             return "词汇";
         } else if (wordCount >= 2 && wordCount <= 3) {
-            return "短语"; // 或根据偏好输出为 固定搭配
+            return "短语";
         } else {
             return "语法";
         }
@@ -226,6 +244,30 @@
     function clearDetection() {
         document.getElementById("targetCheckpoint").value = "";
         updateTypeDisplay("未识别");
+    }
+
+    // 🧹 一键清空核心逻辑：只清空除“册别”和“文章单元”之外的一切变量
+    function clearFormExceptLessons() {
+        // 1. 清空姓名与自改勾选
+        document.getElementById("studentName").value = "";
+        document.getElementById("needSelfCorrectionReminder").checked = false;
+        
+        // 2. 清空自动提取卡点和描述备注
+        document.getElementById("targetCheckpoint").value = "";
+        document.getElementById("teacherRemark").value = "";
+        updateTypeDisplay("未识别");
+        
+        // 3. 将星星系统恢复至满分 5 星初始状态
+        document.getElementById("v_star").value = "5";
+        document.getElementById("g_star").value = "5";
+        document.getElementById("s_star").value = "5";
+        document.getElementById("c_star").value = "5";
+        
+        // 4. 清空右侧大模型输出文本框
+        document.getElementById("outputTextarea").value = "";
+        
+        // 提示释放压力
+        console.log("魔方表单已重置，当前课时已保留锁定。");
     }
 
     function handleWordClick(element, event) {
@@ -282,7 +324,7 @@
         
         generateBtn.disabled = true;
         generateBtn.innerText = "⚡ DeepSeek 正在极速复盘中...";
-        outputArea.value = "正在连接 DeepSeek 智审网络，请稍候...（若长时间无响应请检查API Key余额或网络）";
+        outputArea.value = "正在连接 DeepSeek 智审网络，请稍候...";
 
         const systemPrompt = `你是一位精通国家地理少儿英语教材的顶级教研名师。请严格遵循以下输出模板，禁止输出任何多余的废话、前言、后记、或者是“好的为您生成内容”。整体字数必须严格卡在 350 字左右。四个维度的五角星直接按给出的符号直接原样呈现，不添加额外文字。`;
         
@@ -331,8 +373,8 @@ ${selfCorrectionPrompt}
                 body: JSON.stringify({
                     model: "deepseek-chat",
                     messages: [
-                        { role: "system", content: systemPrompt },
-                        { role: "user", content: userPrompt }
+                        { role: "system", systemPrompt },
+                        { role: "user", userPrompt }
                     ],
                     temperature: 0.3
                 })
@@ -356,7 +398,7 @@ ${selfCorrectionPrompt}
         const textarea = document.getElementById("outputTextarea");
         textarea.select();
         document.execCommand("copy");
-        alert("🎉 反馈提分文案已成功复制！可以直接回微信群发送啦！");
+        alert("🎉 精简反馈提分报告已成功复制！");
     }
 
     loadApiKey();
